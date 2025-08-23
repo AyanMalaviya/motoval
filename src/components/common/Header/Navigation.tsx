@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { User } from '../../../types/auth';
+import type { User } from '../../../types/auth';
 
 interface NavigationProps {
   user: User | null;
