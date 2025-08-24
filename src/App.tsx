@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/common/Header/Header';
 import HomePage from './pages/HomePage';
 import './styles/globals.css';
+import CarListingPage from './pages/car/CarListingPage';
+import AboutPage from './pages/AboutPage';
 
 const App: React.FC = () => {
   return (
@@ -12,7 +14,8 @@ const App: React.FC = () => {
         <main>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            {/* Add more routes as we build them */}
+            <Route path="/cars" element={<CarListingPage />} />
+            <Route path="/about" element={<AboutPage />} />
             <Route path="*" element={<div>Page Not Found</div>} />
           </Routes>
         </main>
