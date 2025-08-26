@@ -1,22 +1,22 @@
-import { Link, useLocation } from 'react-router-dom';
-import type { User } from '../../../types/auth';
+import { Link, useLocation } from 'react-router-dom'
+import type { User } from '@supabase/supabase-js'
 
 interface NavigationProps {
-  user: User | null;
-  isAuthenticated: boolean;
+  user: User | null
+  isAuthenticated: boolean
 }
 
 const Navigation: React.FC<NavigationProps> = ({ user, isAuthenticated }) => {
-  const location = useLocation();
+  const location = useLocation()
   
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string) => location.pathname === path
   
   const linkClass = (path: string) => 
     `px-3 py-2 rounded-md text-sm font-medium transition-colors ${
       isActive(path)
         ? 'bg-blue-700 text-white'
         : 'text-gray-300 hover:bg-blue-600 hover:text-white'
-    }`;
+    }`
 
   return (
     <nav className="flex space-x-4">
@@ -24,29 +24,31 @@ const Navigation: React.FC<NavigationProps> = ({ user, isAuthenticated }) => {
         Home
       </Link>
       <Link to="/cars" className={linkClass('/cars')}>
-        Cars
+        Browse Cars
       </Link>
       <Link to="/about" className={linkClass('/about')}>
         About
       </Link>
-      <Link to="/contact" className={linkClass('/contact')}>
-        Contact
-      </Link>
       
-      {isAuthenticated && user ? (
+      {isAuthenticated && (
         <>
-          <Link to="/dashboard" className={linkClass('/dashboard')}>
-            Dashboard
+          <Link to="/add-car" className={linkClass('/add-car')}>
+            List Your Car
           </Link>
-          {(user.role === 'admin' || user.role === 'super_admin') && (
-            <Link to="/admin" className={linkClass('/admin')}>
-              Admin Panel
-            </Link>
-          )}
+          <Link to="/my-listings" className={linkClass('/my-listings')}>
+            My Listings
+          </Link>
         </>
-      ) : null}
-    </nav>
-  );
-};
+      )}
 
-export default Navigation;
+      
+      {isAuthenticated && user?.user_metadata?.role === 'admin' && (
+        <Link to="/admin" className={linkClass('/admin')}>
+          Admin Panel
+        </Link>
+      )}
+    </nav>
+  )
+}
+
+export default Navigation

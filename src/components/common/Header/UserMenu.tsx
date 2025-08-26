@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import type { User } from '../../../types/auth';
+import type { User } from '@supabase/supabase-js';
 
 interface UserMenuProps {
   user: User | null;
@@ -42,6 +42,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, isAuthenticated, onLogout }) 
     );
   }
 
+  const firstName = user?.user_metadata?.first_name || '';
+  const lastName = user?.user_metadata?.last_name || '';
+  const displayName = firstName && lastName ? `${firstName} ${lastName}` : user?.email || '';
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -50,10 +54,10 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, isAuthenticated, onLogout }) 
       >
         <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
           <span className="text-white text-sm font-bold">
-            {user?.firstName.charAt(0)}{user?.lastName.charAt(0)}
+            {firstName ? firstName.charAt(0) : user?.email?.charAt(0)?.toUpperCase()}
           </span>
         </div>
-        <span>{user?.firstName} {user?.lastName}</span>
+        <span>{displayName}</span>
         <svg
           className={`w-4 h-4 transform transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
@@ -67,9 +71,8 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, isAuthenticated, onLogout }) 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50">
           <div className="px-4 py-2 text-sm text-gray-700 border-b">
-            <p className="font-medium">{user?.firstName} {user?.lastName}</p>
+            <p className="font-medium">{displayName}</p>
             <p className="text-gray-500">{user?.email}</p>
-            <p className="text-xs text-blue-600 capitalize">{user?.role}</p>
           </div>
           
           <Link
@@ -87,16 +90,6 @@ const UserMenu: React.FC<UserMenuProps> = ({ user, isAuthenticated, onLogout }) 
           >
             My Bookings
           </Link>
-          
-          {(user?.role === 'admin' || user?.role === 'super_admin') && (
-            <Link
-              to="/admin"
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              onClick={() => setIsOpen(false)}
-            >
-              Admin Panel
-            </Link>
-          )}
           
           <hr className="my-1" />
           

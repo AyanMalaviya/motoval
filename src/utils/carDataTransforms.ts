@@ -1,91 +1,67 @@
-import type { Car } from '../types/car';
-import type { CarAPIResponse } from '../services/carApi';
+import type { Car } from '../types/car'
 
-// Transform CarAPI.app data to your Car interface
-export const transformCarAPIData = (apiData: CarAPIResponse): Car => {
-  return {
-    id: apiData.id.toString(),
-    make: apiData.make,
-    model: apiData.model,
-    year: apiData.year,
-    pricePerDay: calculateRentalPrice(apiData),
-    category: determineCategory(apiData),
-    isAvailable: Math.random() > 0.2, // 80% availability rate
-    features: generateFeatures(apiData),
-    imageUrl: generateCarImageUrl(apiData),
-    seats: apiData.seats || 4,
-    fuelType: determineFuelType(apiData.engine_fuel),
-    transmission: apiData.transmission_type || 'Automatic',
-    description: `${apiData.year} ${apiData.make} ${apiData.model}${apiData.trim ? ` ${apiData.trim}` : ''}`
-  };
-};
+export const transformApiNinjasCar = (car: any): Car => ({
+  id: `${car.make}-${car.model}-${car.year}`,
+  make: car.make || 'Unknown',
+  model: car.model || 'Unknown',
+  year: car.year || 2023,
+  pricePerDay: calculateRentalPrice(car),
+  category: determineCategory(car),
+  isAvailable: Math.random() > 0.2,
+  features: generateFeatures(car),
+  imageUrl: generateCarImageUrl(car.make, car.model),
+  seats: 5,
+  fuelType: car.fuel_type || 'Gasoline',
+  transmission: car.transmission || 'Automatic',
+  description: `${car.year} ${car.make} ${car.model}`
+})
 
-// Helper functions
-const calculateRentalPrice = (car: CarAPIResponse): number => {
-  let basePrice = 40; // Base rental price
-  
-  // Adjust based on year
-  if (car.year >= 2022) basePrice += 30;
-  else if (car.year >= 2018) basePrice += 20;
-  else if (car.year >= 2015) basePrice += 10;
-  
-  // Adjust based on engine power
-  if (car.engine_power_ps && car.engine_power_ps > 300) basePrice += 50;
-  else if (car.engine_power_ps && car.engine_power_ps > 200) basePrice += 30;
-  
-  // Luxury brands premium
-  const luxuryBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Porsche'];
-  if (luxuryBrands.includes(car.make)) basePrice += 40;
-  
-  return Math.round(basePrice);
-};
+export const transformCarQueryCar = (car: any): Car => ({
+  id: car.model_id,
+  make: car.model_make_display,
+  model: car.model_name,
+  year: parseInt(car.model_year),
+  pricePerDay: 45, // Default rental price
+  category: determineCategory(car),
+  isAvailable: true,
+  features: ['AC', 'Radio', 'Bluetooth'],
+  imageUrl: generateCarImageUrl(car.model_make_display, car.model_name),
+  seats: parseInt(car.model_seats) || 5,
+  fuelType: car.model_engine_type || 'Gasoline',
+  transmission: car.model_transmission_type || 'Automatic',
+  description: `${car.model_year} ${car.model_make_display} ${car.model_name}`
+})
 
-const determineCategory = (car: CarAPIResponse): string => {
-  const body = car.body?.toLowerCase() || '';
-  
-  if (body.includes('suv') || body.includes('crossover')) return 'SUV';
-  if (body.includes('sedan') || body.includes('saloon')) return 'Sedan';
-  if (body.includes('hatchback')) return 'Hatchback';
-  if (body.includes('coupe') || body.includes('sports')) return 'Sports';
-  if (body.includes('wagon') || body.includes('estate')) return 'Wagon';
-  if (car.engine_fuel === 'Electric') return 'Electric';
-  
-  // Luxury brands default to luxury category
-  const luxuryBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Lexus'];
-  if (luxuryBrands.includes(car.make)) return 'Luxury';
-  
-  return 'Sedan'; // Default
-};
+const calculateRentalPrice = (car: any): number => {
+  let basePrice = 45
+  if (car.year >= 2023) basePrice += 15
+  if (car.horsepower > 200) basePrice += 10
+  return basePrice
+}
 
-const generateFeatures = (car: CarAPIResponse): string[] => {
-  const features: string[] = ['AC', 'Radio'];
-  
-  if (car.year >= 2018) features.push('Bluetooth', 'USB Charging');
-  if (car.year >= 2020) features.push('Apple CarPlay', 'Android Auto');
-  if (car.engine_power_ps && car.engine_power_ps > 200) features.push('Sport Mode');
-  if (car.drive?.includes('4') || car.drive?.includes('awd')) features.push('AWD');
-  
-  const luxuryBrands = ['BMW', 'Mercedes-Benz', 'Audi', 'Lexus'];
-  if (luxuryBrands.includes(car.make)) {
-    features.push('Leather Seats', 'Premium Sound', 'Navigation');
+const determineCategory = (car: any): string => {
+  const body = car.model_body?.toLowerCase() || car.body?.toLowerCase() || ''
+  if (body.includes('suv')) return 'SUV'
+  if (body.includes('sedan')) return 'Sedan'
+  if (body.includes('truck')) return 'Truck'
+  return 'Sedan'
+}
+
+const generateFeatures = (car: any): string[] => {
+  const features = ['AC', 'Radio']
+  if (car.year >= 2020) features.push('Bluetooth', 'USB')
+  if (car.year >= 2022) features.push('Apple CarPlay')
+  return features
+}
+
+const generateCarImageUrl = (make: string, model: string): string => {
+  const carImages = {
+    'Toyota Camry': 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+    'Ford Escape': 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+    'Chevrolet Malibu': 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
   }
   
-  return features;
-};
-
-const determineFuelType = (engineFuel?: string): string => {
-  if (!engineFuel) return 'Gasoline';
-  
-  const fuel = engineFuel.toLowerCase();
-  if (fuel.includes('electric')) return 'Electric';
-  if (fuel.includes('diesel')) return 'Diesel';
-  if (fuel.includes('hybrid')) return 'Hybrid';
-  
-  return 'Gasoline';
-};
-
-const generateCarImageUrl = (car: CarAPIResponse): string => {
-  // Generate placeholder image URL
-  const makeModel = `${car.make}+${car.model}`.replace(/\s+/g, '+');
-  return `https://via.placeholder.com/400x250/3b82f6/ffffff?text=${makeModel}`;
-};
+  const key = `${make} ${model}`
+  return carImages[key as keyof typeof carImages] || 
+         'https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80'
+}

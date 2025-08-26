@@ -1,159 +1,245 @@
-import React, { useState, useEffect } from 'react';
-import CarCard from '../../components/car/CarCard';
-import CarFiltersComponent from '../../components/car/CarFilters';
-import type { Car, CarFilters } from '../../types/car';
+import React, { useState, useEffect } from 'react'
+import CarCard from '../../components/car/CarCard'
+import CarFiltersComponent from '../../components/car/CarFilters'
+import { supabase } from '../../services/supabaseClient'
+import type { Car, CarFilters } from '../../types/car'
+
+// Database interface matching your Supabase table
+interface UserCar {
+  id: string
+  user_id: string
+  make: string
+  model: string
+  year: number
+  price_per_day: number
+  category: string
+  description: string
+  seats: number
+  fuel_type: string
+  transmission: string
+  features: string[]
+  is_available: boolean
+  location: string
+  images: string[]
+  created_at: string
+  updated_at: string
+}
+
+// Transform UserCar to Car interface for display
+const transformUserCar = (userCar: UserCar): Car => ({
+  id: userCar.id,
+  make: userCar.make,
+  model: userCar.model,
+  year: userCar.year,
+  pricePerDay: userCar.price_per_day,
+  category: userCar.category,
+  isAvailable: userCar.is_available,
+  features: userCar.features || [],
+  imageUrl: userCar.images && userCar.images.length > 0 
+    ? userCar.images[0] 
+    : 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+  seats: userCar.seats,
+  fuelType: userCar.fuel_type,
+  transmission: userCar.transmission,
+  description: userCar.description
+})
 
 const CarListingPage: React.FC = () => {
-  const [cars, setCars] = useState<Car[]>([]);
-  const [filteredCars, setFilteredCars] = useState<Car[]>([]);
-  const [filters, setFilters] = useState<CarFilters>({});
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [cars, setCars] = useState<Car[]>([])
+  const [filteredCars, setFilteredCars] = useState<Car[]>([])
+  const [filters, setFilters] = useState<CarFilters>({})
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [totalCarsCount, setTotalCarsCount] = useState(0)
 
-  // Mock data - working without API for now
+  // Fetch cars from database
   useEffect(() => {
-    const loadCars = async () => {
-      // Simulate loading
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const mockCars: Car[] = [
-        {
-          id: '1',
-          make: 'Toyota',
-          model: 'Camry',
-          year: 2023,
-          pricePerDay: 45,
-          category: 'Sedan',
-          isAvailable: true,
-          features: ['AC', 'Bluetooth', 'GPS'],
-          imageUrl: 'https://cdn.imagin.studio/getimage?customer=img&make=toyota&modelFamily=camry&modelYear=2023&angle=23',
-          seats: 5,
-          fuelType: 'Gasoline',
-          transmission: 'Automatic'
-        },
-        {
-          id: '2',
-          make: 'Ford',
-          model: 'Mustang',
-          year: 2024,
-          pricePerDay: 85,
-          category: 'Sports',
-          isAvailable: true,
-          features: ['AC', 'Bluetooth', 'Premium Sound'],
-          imageUrl: 'https://cdn.imagin.studio/getimage?customer=img&make=ford&modelFamily=mustang&modelYear=2024&angle=23',
-          seats: 4,
-          fuelType: 'Gasoline',
-          transmission: 'Manual'
-        },
-        {
-          id: '3',
-          make: 'Tesla',
-          model: 'Model 3',
-          year: 2024,
-          pricePerDay: 120,
-          category: 'Electric',
-          isAvailable: true,
-          features: ['Autopilot', 'Premium Interior', 'Supercharging'],
-          imageUrl: 'https://cdn.imagin.studio/getimage?customer=img&make=tesla&modelFamily=model-3&modelYear=2024&angle=23',
-          seats: 5,
-          fuelType: 'Electric',
-          transmission: 'Automatic'
-        },
-        {
-          id: '4',
-          make: 'BMW',
-          model: 'X5',
-          year: 2023,
-          pricePerDay: 95,
-          category: 'SUV',
-          isAvailable: false,
-          features: ['4WD', 'Premium Sound', 'Leather Seats'],
-          imageUrl: 'https://cdn.imagin.studio/getimage?customer=img&make=bmw&modelFamily=x5&modelYear=2023&angle=23',
-          seats: 7,
-          fuelType: 'Gasoline',
-          transmission: 'Automatic'
-        },
-        {
-          id: '5',
-          make: 'Audi',
-          model: 'A4',
-          year: 2023,
-          pricePerDay: 75,
-          category: 'Luxury',
-          isAvailable: true,
-          features: ['Quattro AWD', 'Virtual Cockpit', 'Premium Plus'],
-          imageUrl: 'https://cdn.imagin.studio/getimage?customer=img&make=audi&modelFamily=a4&modelYear=2023&angle=23',
-          seats: 5,
-          fuelType: 'Gasoline',
-          transmission: 'Automatic'
-        },
-        {
-          id: '6',
-          make: 'Honda',
-          model: 'Civic',
-          year: 2023,
-          pricePerDay: 40,
-          category: 'Hatchback',
-          isAvailable: true,
-          features: ['Honda Sensing', 'Apple CarPlay', 'Fuel Efficient'],
-          imageUrl: 'https://cdn.imagin.studio/getimage?customer=img&make=honda&modelFamily=civic&modelYear=2023&angle=23',
-          seats: 5,
-          fuelType: 'Gasoline',
-          transmission: 'CVT'
+    const fetchCars = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        console.log('🔍 Fetching cars from database...')
+        
+        // Fetch all available cars
+        const { data: userCars, error: fetchError, count } = await supabase
+          .from('user_cars')
+          .select('*', { count: 'exact' })
+          .eq('is_available', true)
+          .order('created_at', { ascending: false })
+
+        if (fetchError) {
+          console.error('❌ Supabase fetch error:', fetchError)
+          throw fetchError
         }
-      ];
 
-      setCars(mockCars);
-      setLoading(false);
-    };
+        console.log('📊 Raw database response:', userCars)
+        console.log('📈 Total count:', count)
+        
+        setTotalCarsCount(count || 0)
 
-    loadCars();
-  }, []);
+        if (userCars && userCars.length > 0) {
+          const transformedCars = userCars.map((car: UserCar) => transformUserCar(car))
+          console.log('✨ Transformed cars:', transformedCars)
+          setCars(transformedCars)
+          console.log(`✅ Successfully loaded ${transformedCars.length} cars from database`)
+        } else {
+          console.log('⚠️ No cars found in database')
+          setCars([])
+        }
+        
+      } catch (err: any) {
+        console.error('❌ Error loading cars:', err)
+        setError(`Failed to load cars: ${err.message}`)
+        
+        // Fallback to demo data for testing
+        const fallbackCars: Car[] = [
+          {
+            id: 'demo-1',
+            make: 'Toyota',
+            model: 'Camry',
+            year: 2023,
+            pricePerDay: 45,
+            category: 'Sedan',
+            isAvailable: true,
+            features: ['AC', 'Bluetooth', 'GPS'],
+            imageUrl: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
+            seats: 5,
+            fuelType: 'Gasoline',
+            transmission: 'Automatic',
+            description: 'Demo car - Database connection failed'
+          }
+        ]
+        setCars(fallbackCars)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  // Filter cars
+    fetchCars()
+  }, [])
+
+  // Filter cars based on search and filters
   useEffect(() => {
     let filtered = cars.filter(car => {
-      const matchesSearch = car.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           car.model.toLowerCase().includes(searchTerm.toLowerCase());
+      // Search filter
+      const matchesSearch = searchTerm === '' || 
+        car.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        car.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        car.description?.toLowerCase().includes(searchTerm.toLowerCase())
       
-      const matchesMake = !filters.make || car.make === filters.make;
-      const matchesCategory = !filters.category || car.category === filters.category;
-      const matchesPrice = !filters.maxPrice || car.pricePerDay <= filters.maxPrice;
-      const matchesAvailability = filters.isAvailable === undefined || car.isAvailable === filters.isAvailable;
+      // Make filter
+      const matchesMake = !filters.make || car.make === filters.make
+      
+      // Category filter
+      const matchesCategory = !filters.category || car.category === filters.category
+      
+      // Price filter
+      const matchesPrice = (!filters.maxPrice || car.pricePerDay <= filters.maxPrice) &&
+                           (!filters.minPrice || car.pricePerDay >= filters.minPrice)
+      
+      // Availability filter
+      const matchesAvailability = filters.isAvailable === undefined || car.isAvailable === filters.isAvailable
 
-      return matchesSearch && matchesMake && matchesCategory && matchesPrice && matchesAvailability;
-    });
+      return matchesSearch && matchesMake && matchesCategory && matchesPrice && matchesAvailability
+    })
 
-    setFilteredCars(filtered);
-  }, [cars, filters, searchTerm]);
+    setFilteredCars(filtered)
+    console.log(`🔍 Filtered ${filtered.length} cars from ${cars.length} total`)
+  }, [cars, filters, searchTerm])
 
+  // Debug function to test database connection
+  const testDatabaseConnection = async () => {
+    try {
+      console.log('🧪 Testing database connection...')
+      const { data, error } = await supabase
+        .from('user_cars')
+        .select('count(*)')
+        .limit(1)
+
+      if (error) {
+        console.error('❌ Database test failed:', error)
+      } else {
+        console.log('✅ Database connection successful:', data)
+      }
+    } catch (err) {
+      console.error('❌ Database test error:', err)
+    }
+  }
+
+  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading cars...</p>
+          <p className="text-gray-600">Loading rental cars...</p>
+          <button 
+            onClick={testDatabaseConnection}
+            className="mt-4 text-sm text-blue-600 hover:text-blue-800"
+          >
+            Test Database Connection
+          </button>
         </div>
       </div>
-    );
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Available Cars for Rent</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Community Car Rentals
+          </h1>
+          <p className="text-gray-600 mb-4">
+            Rent directly from car owners in your area
+          </p>
           
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-bold">Database Error:</p>
+                  <p className="text-sm">{error}</p>
+                  <p className="text-xs mt-2">Check browser console for details</p>
+                </div>
+                <button 
+                  onClick={testDatabaseConnection}
+                  className="text-sm bg-red-200 px-2 py-1 rounded"
+                >
+                  Test DB
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Success Message */}
+          {!error && cars.length > 0 && (
+            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
+              <p className="flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Connected to database successfully! Found {totalCarsCount} total cars.
+              </p>
+            </div>
+          )}
+          
+          {/* Search Bar */}
           <div className="relative max-w-md">
             <input
               type="text"
-              placeholder="Search cars by make or model..."
+              placeholder="Search by make, model, or description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
             <svg
-              className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+              className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -163,21 +249,77 @@ const CarListingPage: React.FC = () => {
           </div>
         </div>
 
-        <CarFiltersComponent filters={filters} onFiltersChange={setFilters} />
-
-        <div className="mb-6">
-          <p className="text-gray-600">
-            Showing {filteredCars.length} of {cars.length} cars
-          </p>
+        {/* Filters */}
+        <div className="mb-8">
+          <CarFiltersComponent filters={filters} onFiltersChange={setFilters} />
         </div>
 
+        {/* Results Summary */}
+        <div className="mb-6 flex justify-between items-center">
+          <div>
+            <p className="text-gray-600">
+              Showing {filteredCars.length} of {cars.length} available cars
+            </p>
+            {searchTerm && (
+              <p className="text-sm text-gray-500">
+                Searching for: "{searchTerm}"
+              </p>
+            )}
+          </div>
+          
+          {/* Quick Stats */}
+          <div className="hidden md:flex space-x-4 text-sm text-gray-500">
+            <span>Total: {totalCarsCount}</span>
+            <span>Available: {cars.filter(car => car.isAvailable).length}</span>
+            <span>Price Range: ${Math.min(...cars.map(car => car.pricePerDay))} - ${Math.max(...cars.map(car => car.pricePerDay))}</span>
+          </div>
+        </div>
+
+        {/* Car Grid */}
         {filteredCars.length === 0 ? (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center py-16 bg-white rounded-lg shadow-md">
+            <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0M15 17a2 2 0 104 0" />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No cars found</h3>
-            <p className="mt-1 text-sm text-gray-500">Try adjusting your search or filters.</p>
+            <h3 className="text-xl font-medium text-gray-900 mb-2">
+              {cars.length === 0 ? 'No cars available yet' : 'No cars match your filters'}
+            </h3>
+            <p className="text-gray-500 mb-6">
+              {cars.length === 0 
+                ? 'Be the first to list your car for rent!' 
+                : 'Try adjusting your search criteria or filters.'
+              }
+            </p>
+            
+            {cars.length === 0 && (
+              <div className="space-x-4">
+                <button 
+                  onClick={() => window.location.href = '/add-car'}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors"
+                >
+                  List Your Car
+                </button>
+                <button 
+                  onClick={testDatabaseConnection}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-md font-medium transition-colors"
+                >
+                  Check Database
+                </button>
+              </div>
+            )}
+            
+            {cars.length > 0 && (
+              <button
+                onClick={() => {
+                  setFilters({})
+                  setSearchTerm('')
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors"
+              >
+                Clear All Filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -186,9 +328,48 @@ const CarListingPage: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* Debug Panel - Only show in development */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-12 p-4 bg-gray-800 text-white rounded-lg">
+            <h3 className="text-lg font-bold mb-2">🔧 Debug Panel</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p><strong>Total Cars:</strong> {cars.length}</p>
+                <p><strong>Filtered Cars:</strong> {filteredCars.length}</p>
+                <p><strong>Database Count:</strong> {totalCarsCount}</p>
+              </div>
+              <div>
+                <p><strong>Search Term:</strong> "{searchTerm}"</p>
+                <p><strong>Active Filters:</strong> {Object.keys(filters).length}</p>
+                <p><strong>Error:</strong> {error ? 'Yes' : 'No'}</p>
+              </div>
+            </div>
+            <div className="mt-2 space-x-2">
+              <button 
+                onClick={testDatabaseConnection}
+                className="bg-blue-600 px-3 py-1 rounded text-xs"
+              >
+                Test DB
+              </button>
+              <button 
+                onClick={() => console.log('Current cars:', cars)}
+                className="bg-green-600 px-3 py-1 rounded text-xs"
+              >
+                Log Cars
+              </button>
+              <button 
+                onClick={() => window.location.reload()}
+                className="bg-red-600 px-3 py-1 rounded text-xs"
+              >
+                Reload
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default CarListingPage;
+export default CarListingPage
