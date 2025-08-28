@@ -165,54 +165,46 @@ const MyListingsPage: React.FC = () => {
           </div>
         )}
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">{userCars.length}</p>
-                <p className="text-gray-600">Total Listings</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-full">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">
-                  {userCars.filter(car => car.is_available).length}
-                </p>
-                <p className="text-gray-600">Available</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-2xl font-bold text-gray-900">
-                  ${userCars.reduce((sum, car) => sum + car.price_per_day, 0).toFixed(0)}
-                </p>
-                <p className="text-gray-600">Total Daily Value</p>
-              </div>
-            </div>
-          </div>
-        </div>
+{/* Available Cars Value */}
+<div className="bg-white p-6 rounded-lg shadow-md">
+  <div className="flex items-center">
+    <div className="p-3 bg-green-100 rounded-full">
+      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+      </svg>
+    </div>
+    <div className="ml-4">
+      <p className="text-2xl font-bold text-gray-900">
+        ${userCars
+          .filter(car => car.is_available)
+          .reduce((sum, car) => sum + car.price_per_day, 0)
+          .toFixed(0)}
+      </p>
+      <p className="text-gray-600">Available Cars Value</p>
+    </div>
+  </div>
+</div>
+
+{/* Unavailable Cars Value */}
+<div className="bg-white p-6 rounded-lg shadow-md">
+  <div className="flex items-center">
+    <div className="p-3 bg-red-100 rounded-full">
+      <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
+      </svg>
+    </div>
+    <div className="ml-4">
+      <p className="text-2xl font-bold text-gray-900">
+        ${userCars
+          .filter(car => !car.is_available)
+          .reduce((sum, car) => sum + car.price_per_day, 0)
+          .toFixed(0)}
+      </p>
+      <p className="text-gray-600">Unavailable Cars Value</p>
+    </div>
+  </div>
+</div>
+
 
         {/* Car Listings */}
         {userCars.length === 0 ? (
@@ -323,12 +315,13 @@ const MyListingsPage: React.FC = () => {
                         {car.is_available ? 'Mark Unavailable' : 'Mark Available'}
                       </button>
                       
-                      <button
-                        onClick={() => alert('Edit functionality coming soon!')}
+                      <Link
+                        to={`/edit-listing/${car.id}`}
                         className="px-4 py-2 bg-blue-100 text-blue-800 hover:bg-blue-200 rounded text-sm font-medium transition-colors"
                       >
                         Edit
-                      </button>
+                      </Link>
+
                       
                       <button
                         onClick={() => handleDeleteCar(car.id)}

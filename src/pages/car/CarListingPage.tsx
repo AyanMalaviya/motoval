@@ -217,18 +217,6 @@ const CarListingPage: React.FC = () => {
             </div>
           )}
           
-          {/* Success Message */}
-          {!error && cars.length > 0 && (
-            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4">
-              <p className="flex items-center">
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Connected to database successfully! Found {totalCarsCount} total cars.
-              </p>
-            </div>
-          )}
-          
           {/* Search Bar */}
           <div className="relative max-w-md">
             <input
@@ -328,46 +316,7 @@ const CarListingPage: React.FC = () => {
             ))}
           </div>
         )}
-
-        {/* Debug Panel - Only show in development */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-12 p-4 bg-gray-800 text-white rounded-lg">
-            <h3 className="text-lg font-bold mb-2">🔧 Debug Panel</h3>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p><strong>Total Cars:</strong> {cars.length}</p>
-                <p><strong>Filtered Cars:</strong> {filteredCars.length}</p>
-                <p><strong>Database Count:</strong> {totalCarsCount}</p>
-              </div>
-              <div>
-                <p><strong>Search Term:</strong> "{searchTerm}"</p>
-                <p><strong>Active Filters:</strong> {Object.keys(filters).length}</p>
-                <p><strong>Error:</strong> {error ? 'Yes' : 'No'}</p>
-              </div>
-            </div>
-            <div className="mt-2 space-x-2">
-              <button 
-                onClick={testDatabaseConnection}
-                className="bg-blue-600 px-3 py-1 rounded text-xs"
-              >
-                Test DB
-              </button>
-              <button 
-                onClick={() => console.log('Current cars:', cars)}
-                className="bg-green-600 px-3 py-1 rounded text-xs"
-              >
-                Log Cars
-              </button>
-              <button 
-                onClick={() => window.location.reload()}
-                className="bg-red-600 px-3 py-1 rounded text-xs"
-              >
-                Reload
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
     </div>
   )
 }
