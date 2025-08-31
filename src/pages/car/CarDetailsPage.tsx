@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../services/supabaseClient'
 import { useAuth } from '../../context/AuthContext'
 import CarImageGallery from '../../components/car/CarImageGallery'
+import { bookingService } from '../../services/bookingService'
 
 interface UserCar {
   id: string
@@ -102,7 +103,8 @@ const CarDetailsPage: React.FC = () => {
 
   const totalPrice = totalDays * (car?.price_per_day || 0)
 
-  const handleBookingRequest = () => {
+  // FIXED: Added null check for car
+  const handleBookingRequest = async () => {
     if (!user) {
       alert('Please login to book this car')
       navigate('/login')
@@ -114,8 +116,25 @@ const CarDetailsPage: React.FC = () => {
       return
     }
 
-    // Here you would typically create a booking request in your database
-    setShowContactForm(true)
+    // Add null check for car
+    if (!car) {
+      alert('Car information not available')
+      return
+    }
+
+    const result = await bookingService.createBooking(
+      car.id,
+      bookingDates.startDate,
+      bookingDates.endDate,
+      `Booking request for ${car.make} ${car.model}`
+    )
+
+    if (result.success) {
+      alert('🎉 Booking request sent successfully! The car owner will review your request.')
+      setBookingDates({ startDate: '', endDate: '' })
+    } else {
+      alert(`Failed to create booking: ${result.error}`)
+    }
   }
 
   const isOwner = user && car && user.id === car.user_id
@@ -148,6 +167,8 @@ const CarDetailsPage: React.FC = () => {
     )
   }
 
+  // After this point, TypeScript knows that `car` is not null due to the early return above
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -170,7 +191,7 @@ const CarDetailsPage: React.FC = () => {
             {/* Image Gallery */}
             <div className="lg:w-2/3">
               <CarImageGallery
-                images={car.images}
+                images={car.images || []}
                 carName={`${car.make} ${car.model}`}
                 className="w-full h-96 lg:h-[600px]"
               />

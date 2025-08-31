@@ -38,9 +38,14 @@ const Navigation: React.FC<NavigationProps> = ({ user, isAuthenticated }) => {
           <Link to="/my-listings" className={linkClass('/my-listings')}>
             My Listings
           </Link>
+          <Link to="/bookings" className={linkClass('/bookings')}>
+            Bookings
+          </Link>
+          <Link to="/profile" className={linkClass('/profile')}>
+            Profile
+          </Link>
         </>
       )}
-
       
       {isAuthenticated && user?.user_metadata?.role === 'admin' && (
         <Link to="/admin" className={linkClass('/admin')}>
