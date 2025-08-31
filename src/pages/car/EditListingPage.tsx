@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../services/supabaseClient'
-import CarImageGallery from '../../components/car/CarImageGallery'
+// import CarImageGallery from '../../components/car/CarImageGallery'
 
 interface UserCar {
   id: string
@@ -136,6 +136,7 @@ const EditListingPage: React.FC = () => {
     }))
   }
 
+  // NOW USED: Function to delete existing images
   const handleDeleteImage = (imageUrl: string) => {
     setImagesToDelete(prev => [...prev, imageUrl])
   }
@@ -143,7 +144,6 @@ const EditListingPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Add null check for both user and car
     if (!user || !car) {
       setError('Missing user or car information')
       return
@@ -231,7 +231,6 @@ const EditListingPage: React.FC = () => {
     }
   }
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -243,7 +242,6 @@ const EditListingPage: React.FC = () => {
     )
   }
 
-  // Error state
   if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -261,7 +259,6 @@ const EditListingPage: React.FC = () => {
     )
   }
 
-  // Car not found
   if (!car) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -279,7 +276,6 @@ const EditListingPage: React.FC = () => {
     )
   }
 
-  // After all the null checks, TypeScript knows car is not null
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -295,16 +291,33 @@ const EditListingPage: React.FC = () => {
             </div>
           )}
 
-          {/* Current Images Display */}
+          {/* Current Images Display WITH DELETE FUNCTIONALITY */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Current Images</h3>
             {car.images && car.images.length > 0 ? (
-              <div className="mb-4">
-                <CarImageGallery
-                  images={car.images}
-                  carName={`${car.make} ${car.model}`}
-                  className="w-full h-64 rounded-lg"
-                />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+                {car.images
+                  .filter(img => !imagesToDelete.includes(img))
+                  .map((image, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={image}
+                        alt={`Car image ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-md border border-gray-200"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=Failed+to+Load'
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteImage(image)}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                  ))}
               </div>
             ) : (
               <p className="text-gray-500">No images uploaded yet</p>

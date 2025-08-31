@@ -16,6 +16,7 @@ interface UserProfile {
 
 const ProfilePage: React.FC = () => {
   const { user } = useAuth()
+  // NOW USED: profile state to display current information
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -123,10 +124,43 @@ const ProfilePage: React.FC = () => {
             </div>
           )}
 
+          {/* NOW USED: Display current profile information */}
+          <div className="mb-8 p-6 bg-gray-50 rounded-lg">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Profile Information</h2>
+            {profile ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700">Name:</span>
+                  <span className="ml-2 text-gray-600">
+                    {profile.first_name} {profile.last_name}
+                  </span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Email:</span>
+                  <span className="ml-2 text-gray-600">{user?.email}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Phone:</span>
+                  <span className="ml-2 text-gray-600">{profile.phone || 'Not provided'}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">License:</span>
+                  <span className="ml-2 text-gray-600">{profile.driver_license_number || 'Not provided'}</span>
+                </div>
+                <div className="md:col-span-2">
+                  <span className="font-medium text-gray-700">Bio:</span>
+                  <span className="ml-2 text-gray-600">{profile.bio || 'No bio added'}</span>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-500">Profile information not loaded</p>
+            )}
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Basic Information</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Update Profile Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

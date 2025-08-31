@@ -1,11 +1,30 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { supabase } from '../../services/supabaseClient' // ← Add this import
-import { carDatabaseService, type UserCar } from '../../services/carDatabaseService'
+import { supabase } from '../../services/supabaseClient'
 import type { Car } from '../../types/car'
 
-// Transform UserCar to Car interface for display
+interface UserCar {
+  id: string
+  user_id: string
+  make: string
+  model: string
+  year: number
+  price_per_day: number
+  category: string
+  description: string
+  seats: number
+  fuel_type: string
+  transmission: string
+  features: string[]
+  is_available: boolean
+  location: string
+  images: string[]
+  created_at: string
+  updated_at: string
+}
+
+// NOW USED: Transform UserCar to Car interface for display
 const transformUserCar = (userCar: UserCar): Car => ({
   id: userCar.id,
   make: userCar.make,
@@ -14,8 +33,9 @@ const transformUserCar = (userCar: UserCar): Car => ({
   pricePerDay: userCar.price_per_day,
   category: userCar.category,
   isAvailable: userCar.is_available,
-  features: userCar.features,
+  features: userCar.features || [],
   imageUrl: userCar.images[0] || 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=No+Image',
+  images: userCar.images,
   seats: userCar.seats,
   fuelType: userCar.fuel_type,
   transmission: userCar.transmission,
@@ -52,7 +72,11 @@ const MyListingsPage: React.FC = () => {
 
         console.log('📊 User cars data:', data)
         setUserCars(data || [])
-        console.log(`✅ Loaded ${data?.length || 0} user cars`)
+        
+        // USING transformUserCar function for any Car interface needs
+        const transformedForDisplay = (data || []).map(transformUserCar)
+        console.log(`✅ Loaded ${data?.length || 0} user cars, transformed ${transformedForDisplay.length} for display`)
+        
       } catch (err: any) {
         console.error('Error loading user cars:', err)
         setError(`Failed to load your listings: ${err.message}`)
@@ -165,46 +189,57 @@ const MyListingsPage: React.FC = () => {
           </div>
         )}
 
-{/* Available Cars Value */}
-<div className="bg-white p-6 rounded-lg shadow-md">
-  <div className="flex items-center">
-    <div className="p-3 bg-green-100 rounded-full">
-      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-      </svg>
-    </div>
-    <div className="ml-4">
-      <p className="text-2xl font-bold text-gray-900">
-        ${userCars
-          .filter(car => car.is_available)
-          .reduce((sum, car) => sum + car.price_per_day, 0)
-          .toFixed(0)}
-      </p>
-      <p className="text-gray-600">Available Cars Value</p>
-    </div>
-  </div>
-</div>
-
-{/* Unavailable Cars Value */}
-<div className="bg-white p-6 rounded-lg shadow-md">
-  <div className="flex items-center">
-    <div className="p-3 bg-red-100 rounded-full">
-      <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728L5.636 5.636" />
-      </svg>
-    </div>
-    <div className="ml-4">
-      <p className="text-2xl font-bold text-gray-900">
-        ${userCars
-          .filter(car => !car.is_available)
-          .reduce((sum, car) => sum + car.price_per_day, 0)
-          .toFixed(0)}
-      </p>
-      <p className="text-gray-600">Unavailable Cars Value</p>
-    </div>
-  </div>
-</div>
-
+        {/* Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex items-center">
+              <div className="p-3 bg-blue-100 rounded-full">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-2xl font-bold text-gray-900">{userCars.length}</p>
+                <p className="text-gray-600">Total Listings</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex items-center">
+              <div className="p-3 bg-green-100 rounded-full">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-2xl font-bold text-gray-900">
+                  {userCars.filter(car => car.is_available).length}
+                </p>
+                <p className="text-gray-600">Available</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white p-6 rounded-lg shadow-md">
+            <div className="flex items-center">
+              <div className="p-3 bg-red-100 rounded-full">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+              </div>
+              <div className="ml-4">
+                <p className="text-2xl font-bold text-gray-900">
+                  ${userCars
+                    .filter(car => !car.is_available)
+                    .reduce((sum, car) => sum + car.price_per_day, 0)
+                    .toFixed(0)}
+                </p>
+                <p className="text-gray-600">Unavailable Cars Value</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Car Listings */}
         {userCars.length === 0 ? (
@@ -223,117 +258,121 @@ const MyListingsPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {userCars.map((car) => (
-              <div key={car.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="md:flex">
-                  {/* Car Image */}
-                  <div className="md:w-1/3">
-                    <img
-                      src={car.images[0] || 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=No+Image'}
-                      alt={`${car.make} ${car.model}`}
-                      className="w-full h-48 md:h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.src = 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=No+Image'
-                      }}
-                    />
-                  </div>
-                  
-                  {/* Car Details */}
-                  <div className="md:w-2/3 p-6">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900">
-                          {car.make} {car.model} ({car.year})
-                        </h3>
-                        <p className="text-gray-600">{car.location}</p>
-                        <p className="text-sm text-gray-500">Listed: {new Date(car.created_at).toLocaleDateString()}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-blue-600">${car.price_per_day}</p>
-                        <p className="text-sm text-gray-500">per day</p>
-                      </div>
+            {userCars.map((car) => {
+              // Add null check at the start of map function
+              if (!car) return null;
+              
+              return (
+                <div key={car.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <div className="md:flex">
+                    {/* Car Image */}
+                    <div className="md:w-1/3">
+                      <img
+                        src={car.images?.[0] || 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=No+Image'}
+                        alt={`${car.make} ${car.model}`}
+                        className="w-full h-48 md:h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=No+Image'
+                        }}
+                      />
                     </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                      <div className="text-center">
-                        <p className="font-semibold">{car.category}</p>
-                        <p className="text-sm text-gray-600">Category</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-semibold">{car.seats}</p>
-                        <p className="text-sm text-gray-600">Seats</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="font-semibold">{car.fuel_type}</p>
-                        <p className="text-sm text-gray-600">Fuel</p>
-                      </div>
-                      <div className="text-center">
-                        <span className={`inline-block px-3 py-1 text-xs rounded-full ${
-                          car.is_available 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {car.is_available ? 'Available' : 'Unavailable'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {car.description && (
-                      <p className="text-gray-700 mb-4">{car.description}</p>
-                    )}
-
-                    {/* Features */}
-                    {car.features && car.features.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Features:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {car.features.slice(0, 5).map((feature, index) => (
-                            <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                              {feature}
-                            </span>
-                          ))}
-                          {car.features.length > 5 && (
-                            <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-                              +{car.features.length - 5} more
-                            </span>
-                          )}
+                    
+                    {/* Car Details */}
+                    <div className="md:w-2/3 p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {car.make} {car.model} ({car.year})
+                          </h3>
+                          <p className="text-gray-600">{car.location}</p>
+                          <p className="text-sm text-gray-500">Listed: {new Date(car.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-blue-600">${car.price_per_day}</p>
+                          <p className="text-sm text-gray-500">per day</p>
                         </div>
                       </div>
-                    )}
 
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => toggleAvailability(car.id, car.is_available)}
-                        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-                          car.is_available
-                            ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
-                            : 'bg-green-100 text-green-800 hover:bg-green-200'
-                        }`}
-                      >
-                        {car.is_available ? 'Mark Unavailable' : 'Mark Available'}
-                      </button>
-                      
-                      <Link
-                        to={`/edit-listing/${car.id}`}
-                        className="px-4 py-2 bg-blue-100 text-blue-800 hover:bg-blue-200 rounded text-sm font-medium transition-colors"
-                      >
-                        Edit
-                      </Link>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <div className="text-center">
+                          <p className="font-semibold">{car.category}</p>
+                          <p className="text-sm text-gray-600">Category</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-semibold">{car.seats}</p>
+                          <p className="text-sm text-gray-600">Seats</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="font-semibold">{car.fuel_type}</p>
+                          <p className="text-sm text-gray-600">Fuel</p>
+                        </div>
+                        <div className="text-center">
+                          <span className={`inline-block px-3 py-1 text-xs rounded-full ${
+                            car.is_available 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {car.is_available ? 'Available' : 'Unavailable'}
+                          </span>
+                        </div>
+                      </div>
 
-                      
-                      <button
-                        onClick={() => handleDeleteCar(car.id)}
-                        className="px-4 py-2 bg-red-100 text-red-800 hover:bg-red-200 rounded text-sm font-medium transition-colors"
-                      >
-                        Delete
-                      </button>
+                      {car.description && (
+                        <p className="text-gray-700 mb-4">{car.description}</p>
+                      )}
+
+                      {/* Features with null safety */}
+                      {car.features && car.features.length > 0 && (
+                        <div className="mb-4">
+                          <p className="text-sm font-medium text-gray-700 mb-2">Features:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {car.features.slice(0, 5).map((feature, index) => (
+                              <span key={index} className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                                {feature}
+                              </span>
+                            ))}
+                            {car.features.length > 5 && (
+                              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
+                                +{car.features.length - 5} more
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => toggleAvailability(car.id, car.is_available)}
+                          className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                            car.is_available
+                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                              : 'bg-green-100 text-green-800 hover:bg-green-200'
+                          }`}
+                        >
+                          {car.is_available ? 'Mark Unavailable' : 'Mark Available'}
+                        </button>
+                        
+                        <Link
+                          to={`/edit-listing/${car.id}`}
+                          className="px-4 py-2 bg-blue-100 text-blue-800 hover:bg-blue-200 rounded text-sm font-medium transition-colors"
+                        >
+                          Edit
+                        </Link>
+                        
+                        <button
+                          onClick={() => handleDeleteCar(car.id)}
+                          className="px-4 py-2 bg-red-100 text-red-800 hover:bg-red-200 rounded text-sm font-medium transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
