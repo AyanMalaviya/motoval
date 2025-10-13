@@ -1,324 +1,168 @@
-import React, { useState, useEffect } from 'react'
-import CarCard from '../../components/car/CarCard'
-import CarFiltersComponent from '../../components/car/CarFilters'
-import { supabase } from '../../services/supabaseClient'
-import type { Car, CarFilters } from '../../types/car'
-
-// Database interface matching your Supabase table
-interface UserCar {
-  id: string
-  user_id: string
-  make: string
-  model: string
-  year: number
-  price_per_day: number
-  category: string
-  description: string
-  seats: number
-  fuel_type: string
-  transmission: string
-  features: string[]
-  is_available: boolean
-  location: string
-  images: string[]
-  created_at: string
-  updated_at: string
-}
-
-// Transform UserCar to Car interface for display
-const transformUserCar = (userCar: UserCar): Car => ({
-  id: userCar.id,
-  make: userCar.make,
-  model: userCar.model,
-  year: userCar.year,
-  pricePerDay: userCar.price_per_day,
-  category: userCar.category,
-  isAvailable: userCar.is_available,
-  features: userCar.features || [],
-  imageUrl: userCar.images && userCar.images.length > 0 
-    ? userCar.images[0] 
-    : 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
-  seats: userCar.seats,
-  fuelType: userCar.fuel_type,
-  transmission: userCar.transmission,
-  description: userCar.description
-})
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../services/supabaseClient';
+import CarCard from '../../components/car/CarCard';
+import CarFiltersComponent from '../../components/car/CarFilters';
+import Pagination from '../../components/common/UI/Pagination';
+import Loading from '../../components/common/UI/Loading';
+import type { Car, CarFilters } from '../../types/car';
 
 const CarListingPage: React.FC = () => {
-  const [cars, setCars] = useState<Car[]>([])
-  const [filteredCars, setFilteredCars] = useState<Car[]>([])
-  const [filters, setFilters] = useState<CarFilters>({})
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [totalCarsCount, setTotalCarsCount] = useState(0)
+  const [cars, setCars] = useState<Car[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState<CarFilters>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const carsPerPage = 9;
 
-  // Fetch cars from database
   useEffect(() => {
     const fetchCars = async () => {
       try {
-        setLoading(true)
-        setError(null)
-        
-        console.log('🔍 Fetching cars from database...')
-        
-        // Fetch all available cars
-        const { data: userCars, error: fetchError, count } = await supabase
+        setLoading(true);
+        setError(null);
+
+        let query = supabase
           .from('user_cars')
-          .select('*', { count: 'exact' })
-          .eq('is_available', true)
-          .order('created_at', { ascending: false })
+          .select('*')
+          .eq('is_available', true);
 
-        if (fetchError) {
-          console.error('❌ Supabase fetch error:', fetchError)
-          throw fetchError
+        if (filters.make) {
+          query = query.eq('make', filters.make);
+        }
+        if (filters.category) {
+          query = query.eq('category', filters.category);
+        }
+        if (filters.maxPrice) {
+          query = query.lte('price_per_day', filters.maxPrice);
+        }
+        if (filters.isAvailable !== undefined) {
+          query = query.eq('is_available', filters.isAvailable);
         }
 
-        console.log('📊 Raw database response:', userCars)
-        console.log('📈 Total count:', count)
-        
-        setTotalCarsCount(count || 0)
+        const { data, error: fetchError } = await query;
 
-        if (userCars && userCars.length > 0) {
-          const transformedCars = userCars.map((car: UserCar) => transformUserCar(car))
-          console.log('✨ Transformed cars:', transformedCars)
-          setCars(transformedCars)
-          console.log(`✅ Successfully loaded ${transformedCars.length} cars from database`)
-        } else {
-          console.log('⚠️ No cars found in database')
-          setCars([])
-        }
-        
+        if (fetchError) throw fetchError;
+
+        const transformedCars: Car[] = (data || []).map(car => ({
+          id: car.id,
+          make: car.make,
+          model: car.model,
+          year: car.year,
+          pricePerDay: car.price_per_day,
+          category: car.category,
+          isAvailable: car.is_available,
+          features: car.features || [],
+          imageUrl: car.images?.[0] || 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=No+Image',
+          images: car.images,
+          seats: car.seats,
+          fuelType: car.fuel_type,
+          transmission: car.transmission,
+          description: car.description
+        }));
+
+        setCars(transformedCars);
       } catch (err: any) {
-        console.error('❌ Error loading cars:', err)
-        setError(`Failed to load cars: ${err.message}`)
-        
-        // Fallback to demo data for testing
-        const fallbackCars: Car[] = [
-          {
-            id: 'demo-1',
-            make: 'Toyota',
-            model: 'Camry',
-            year: 2023,
-            pricePerDay: 45,
-            category: 'Sedan',
-            isAvailable: true,
-            features: ['AC', 'Bluetooth', 'GPS'],
-            imageUrl: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
-            seats: 5,
-            fuelType: 'Gasoline',
-            transmission: 'Automatic',
-            description: 'Demo car - Database connection failed'
-          }
-        ]
-        setCars(fallbackCars)
+        setError(`Failed to load cars: ${err.message}`);
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
+    };
 
-    fetchCars()
-  }, [])
+    fetchCars();
+  }, [filters]);
 
-  // Filter cars based on search and filters
-  useEffect(() => {
-    let filtered = cars.filter(car => {
-      // Search filter
-      const matchesSearch = searchTerm === '' || 
-        car.make.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        car.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        car.description?.toLowerCase().includes(searchTerm.toLowerCase())
-      
-      // Make filter
-      const matchesMake = !filters.make || car.make === filters.make
-      
-      // Category filter
-      const matchesCategory = !filters.category || car.category === filters.category
-      
-      // Price filter
-      const matchesPrice = (!filters.maxPrice || car.pricePerDay <= filters.maxPrice) &&
-                           (!filters.minPrice || car.pricePerDay >= filters.minPrice)
-      
-      // Availability filter
-      const matchesAvailability = filters.isAvailable === undefined || car.isAvailable === filters.isAvailable
+  const indexOfLastCar = currentPage * carsPerPage;
+  const indexOfFirstCar = indexOfLastCar - carsPerPage;
+  const currentCars = cars.slice(indexOfFirstCar, indexOfLastCar);
+  const totalPages = Math.ceil(cars.length / carsPerPage);
 
-      return matchesSearch && matchesMake && matchesCategory && matchesPrice && matchesAvailability
-    })
-
-    setFilteredCars(filtered)
-    console.log(`🔍 Filtered ${filtered.length} cars from ${cars.length} total`)
-  }, [cars, filters, searchTerm])
-
-  // Debug function to test database connection
-  const testDatabaseConnection = async () => {
-    try {
-      console.log('🧪 Testing database connection...')
-      const { data, error } = await supabase
-        .from('user_cars')
-        .select('count(*)')
-        .limit(1)
-
-      if (error) {
-        console.error('❌ Database test failed:', error)
-      } else {
-        console.log('✅ Database connection successful:', data)
-      }
-    } catch (err) {
-      console.error('❌ Database test error:', err)
-    }
-  }
-
-  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading rental cars...</p>
-          <button 
-            onClick={testDatabaseConnection}
-            className="mt-4 text-sm text-blue-600 hover:text-blue-800"
-          >
-            Test Database Connection
-          </button>
-        </div>
+      <div className="min-h-screen bg-gray-950">
+        <Loading fullScreen text="Loading available cars..." size="lg" variant="spinner" />
       </div>
-    )
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">
-            Community Car Rentals
-          </h1>
-          <p className="text-gray-600 mb-4">
-            Rent directly from car owners in your area
-          </p>
-          
-          {/* Error Display */}
-          {error && (
-            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-bold">Database Error:</p>
-                  <p className="text-sm">{error}</p>
-                  <p className="text-xs mt-2">Check browser console for details</p>
-                </div>
-                <button 
-                  onClick={testDatabaseConnection}
-                  className="text-sm bg-red-200 px-2 py-1 rounded"
-                >
-                  Test DB
-                </button>
+    <div className="min-h-screen bg-gray-950">
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-br from-gray-900 via-purple-900/20 to-pink-900/20 border-b border-gray-800">
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl opacity-10 animate-blob animation-delay-2000"></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <div className="text-center">
+            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+              Browse Available Cars
+            </h1>
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+              Find the perfect vehicle for your next adventure
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-4 text-gray-400">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>{cars.length} Cars Available</span>
               </div>
             </div>
-          )}
-          
-          {/* Search Bar */}
-          <div className="relative max-w-md">
-            <input
-              type="text"
-              placeholder="Search by make, model, or description..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <svg
-              className="absolute left-3 top-3.5 h-5 w-5 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
           </div>
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Filters */}
-        <div className="mb-8">
-          <CarFiltersComponent filters={filters} onFiltersChange={setFilters} />
-        </div>
+        <CarFiltersComponent filters={filters} onFiltersChange={setFilters} />
 
-        {/* Results Summary */}
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <p className="text-gray-600">
-              Showing {filteredCars.length} of {cars.length} available cars
-            </p>
-            {searchTerm && (
-              <p className="text-sm text-gray-500">
-                Searching for: "{searchTerm}"
-              </p>
-            )}
-          </div>
-          
-          {/* Quick Stats */}
-          <div className="hidden md:flex space-x-4 text-sm text-gray-500">
-            <span>Total: {totalCarsCount}</span>
-            <span>Available: {cars.filter(car => car.isAvailable).length}</span>
-            <span>Price Range: ${Math.min(...cars.map(car => car.pricePerDay))} - ${Math.max(...cars.map(car => car.pricePerDay))}</span>
-          </div>
-        </div>
-
-        {/* Car Grid */}
-        {filteredCars.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-lg shadow-md">
-            <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0M15 17a2 2 0 104 0" />
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-6 flex items-start gap-3">
+            <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
             </svg>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
-              {cars.length === 0 ? 'No cars available yet' : 'No cars match your filters'}
-            </h3>
-            <p className="text-gray-500 mb-6">
-              {cars.length === 0 
-                ? 'Be the first to list your car for rent!' 
-                : 'Try adjusting your search criteria or filters.'
-              }
-            </p>
-            
-            {cars.length === 0 && (
-              <div className="space-x-4">
-                <button 
-                  onClick={() => window.location.href = '/add-car'}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors"
-                >
-                  List Your Car
-                </button>
-                <button 
-                  onClick={testDatabaseConnection}
-                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-md font-medium transition-colors"
-                >
-                  Check Database
-                </button>
-              </div>
-            )}
-            
-            {cars.length > 0 && (
-              <button
-                onClick={() => {
-                  setFilters({})
-                  setSearchTerm('')
-                }}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md font-medium transition-colors"
-              >
-                Clear All Filters
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredCars.map((car) => (
-              <CarCard key={car.id} car={car} />
-            ))}
+            <div>
+              <p className="font-bold">Error:</p>
+              <p className="text-sm">{error}</p>
+            </div>
           </div>
         )}
-        </div>
-    </div>
-  )
-}
 
-export default CarListingPage
+        {/* Cars Grid */}
+        {currentCars.length === 0 ? (
+          <div className="text-center py-16 bg-gray-900 border border-gray-800 rounded-xl">
+            <svg className="mx-auto h-16 w-16 text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 className="text-xl font-bold text-white mb-2">No cars found</h3>
+            <p className="text-gray-400">Try adjusting your filters to see more results</p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {currentCars.map((car) => (
+                <CarCard key={car.id} car={car} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center">
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  showFirstLast={true}
+                  maxVisible={5}
+                />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default CarListingPage;
