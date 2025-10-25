@@ -1,5 +1,5 @@
 import React from 'react';
-import Button from '../ui/Button';
+import Button from '../common/UI/Button';
 import type { CarFilters } from '../../types/car';
 
 interface CarFiltersComponentProps {
