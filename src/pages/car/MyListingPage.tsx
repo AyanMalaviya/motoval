@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../services/supabaseClient';
 import Button from '../../components/common/UI/Button';
 import Loading from '../../components/common/UI/Loading';
-import type { Car } from '../../types/car';
+// import type { Car } from '../../types/car';
 
 interface UserCar {
   id: string;
@@ -26,26 +26,26 @@ interface UserCar {
   updated_at: string;
 }
 
-const transformUserCar = (userCar: UserCar): Car => ({
-  id: userCar.id,
-  make: userCar.make,
-  model: userCar.model,
-  year: userCar.year,
-  pricePerDay: userCar.price_per_day,
-  category: userCar.category,
-  isAvailable: userCar.is_available,
-  features: userCar.features || [],
-  imageUrl: userCar.images[0] || 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=No+Image',
-  images: userCar.images,
-  seats: userCar.seats,
-  fuelType: userCar.fuel_type,
-  transmission: userCar.transmission,
-  description: userCar.description
-});
+// const transformUserCar = (userCar: UserCar): Car => ({
+//   id: userCar.id,
+//   make: userCar.make,
+//   model: userCar.model,
+//   year: userCar.year,
+//   pricePerDay: userCar.price_per_day,
+//   category: userCar.category,
+//   isAvailable: userCar.is_available,
+//   features: userCar.features || [],
+//   imageUrl: userCar.images[0] || 'https://via.placeholder.com/400x250/e5e7eb/6b7280?text=No+Image',
+//   images: userCar.images,
+//   seats: userCar.seats,
+//   fuelType: userCar.fuel_type,
+//   transmission: userCar.transmission,
+//   description: userCar.description
+// });
 
 const MyListingsPage: React.FC = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const [userCars, setUserCars] = useState<UserCar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
