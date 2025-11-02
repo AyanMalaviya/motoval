@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../services/supabaseClient';
 import Button from '../../components/common/UI/Button';
 import Loading from '../../components/common/UI/Loading';
+import { Link } from 'react-router-dom';
 
 interface Booking {
   id: string;
@@ -121,14 +122,16 @@ const DashboardPage: React.FC = () => {
         <p className="text-gray-400 mb-6">
           If you have any questions, please feel free to contact our support team.
         </p>
-        <Button
-          variant="primary"
-          size="lg"
-          onClick={() => window.location.href = '/contact'}
-          fullWidth
-        >
-          Contact Support
-        </Button>
+        <Link to ="/cars">
+            <Button
+            variant="primary"
+            size="lg"
+            onClick={() => window.location.href = '/contact'}
+            fullWidth
+            >
+            Contact Support
+            </Button>
+        </Link>
       </section>
     </div>
   );
