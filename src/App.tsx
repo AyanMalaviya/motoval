@@ -15,6 +15,7 @@ import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import './styles/globals.css';
 import ContactPage from './pages/ContactPage';
+import DashboardPage from './pages/user/DashboardPage';
 
 const App: React.FC = () => {
   return (
@@ -36,6 +37,7 @@ const App: React.FC = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </main>

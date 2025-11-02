@@ -100,6 +100,17 @@ const UserMenu: React.FC<UserMenuProps> = ({ user }) => {
               </svg>
               <span className="font-medium">Profile</span>
             </Link>
+            <Link
+              to="/dashboard"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12h18M3 6h18M3 18h18" />
+              </svg>
+              <span className="font-medium">Dashboard</span>
+            </Link>
+
 
             <Link
               to="/my-listings"
