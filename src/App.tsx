@@ -13,6 +13,8 @@ import ProfilePage from './pages/user/ProfilePage';
 import BookingsPage from './pages/booking/BookingPage';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import UpdatePasswordPage from './pages/auth/UpdatePassword';
 import './styles/globals.css';
 import ContactPage from './pages/ContactPage';
 import DashboardPage from './pages/user/DashboardPage';
@@ -39,6 +41,8 @@ const App: React.FC = () => {
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="*" element={<NotFoundPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/update-password" element={<UpdatePasswordPage />} />
             </Routes>
           </main>
         </div>

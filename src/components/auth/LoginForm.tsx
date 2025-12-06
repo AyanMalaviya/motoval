@@ -123,14 +123,15 @@ const LoginForm: React.FC = () => {
                 </label>
               </div>
 
-              <div className="text-sm">
-                <Link
-                  to="/forgot-password"
-                  className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
+              <div className="flex items-center justify-end mb-6">
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm font-medium text-purple-400 hover:text-purple-300 transition-colors"
                 >
-                  Forgot password?
+                  Forgot your password?
                 </Link>
               </div>
+
             </div>
 
             <Button
