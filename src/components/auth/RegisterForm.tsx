@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import Input from '../common/UI/Input';
-import Button from '../common/UI/Button';
+import Input from '../../components/common/UI/Input';
+import Button from '../../components/common/UI/Button';
 
 const RegisterForm: React.FC = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: '',
   });
@@ -44,6 +45,14 @@ const RegisterForm: React.FC = () => {
       return;
     }
 
+    // Validate phone number (10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      setError('Phone number must be exactly 10 digits');
+      setLoading(false);
+      return;
+    }
+
     try {
       const { error } = await signUp(
         formData.email,
@@ -51,15 +60,16 @@ const RegisterForm: React.FC = () => {
         {
           first_name: formData.firstName,
           last_name: formData.lastName,
+          phone: formData.phone,
         }
       );
 
       if (error) throw error;
 
-      setSuccess('Account created successfully! Please check your email to verify your account.');
-      setTimeout(() => navigate('/login'), 3000);
+      setSuccess('Account created successfully! Redirecting to login...');
+      setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to create account');
     } finally {
       setLoading(false);
     }
@@ -157,6 +167,24 @@ const RegisterForm: React.FC = () => {
             />
 
             <Input
+              label="Phone Number"
+              id="phone"
+              name="phone"
+              type="tel"
+              required
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="1234567890"
+              helperText="Enter 10 digit phone number"
+              icon={
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+              }
+              fullWidth
+            />
+
+            <Input
               label="Password"
               id="password"
               name="password"
@@ -212,7 +240,7 @@ const RegisterForm: React.FC = () => {
             <Button
               type="submit"
               variant="primary"
-              size="lg"
+              size={"lg" as const}
               isLoading={loading}
               fullWidth
             >

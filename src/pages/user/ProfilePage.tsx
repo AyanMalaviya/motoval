@@ -79,8 +79,25 @@ const ProfilePage: React.FC = () => {
     e.preventDefault();
     if (!user) return;
 
-    setSaving(true);
+    // Clear previous messages
     setMessage('');
+
+    // Validate phone number is provided
+    if (!formData.phone || formData.phone.trim() === '') {
+      setMessage('Phone number is required for booking purposes');
+      setMessageType('error');
+      return;
+    }
+
+    // Validate phone format (10 digits)
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      setMessage('Phone number must be exactly 10 digits');
+      setMessageType('error');
+      return;
+    }
+
+    setSaving(true);
 
     try {
       const { error } = await supabase
@@ -138,6 +155,19 @@ const ProfilePage: React.FC = () => {
 
       <section className="py-12 bg-gray-950">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Phone Number Warning Alert */}
+          {!profile?.phone && (
+            <div className="mb-6 bg-yellow-500/10 border border-yellow-500/50 text-yellow-400 px-4 py-3 rounded-lg flex items-start gap-3">
+              <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+              <div>
+                <p className="font-semibold">Phone Number Required</p>
+                <p className="text-sm">Please add your phone number to enable car bookings and allow owners to contact you for negotiations.</p>
+              </div>
+            </div>
+          )}
+
           {/* Success/Error Message */}
           {message && (
             <div className={`mb-6 px-4 py-3 rounded-lg flex items-start gap-3 ${
@@ -179,9 +209,11 @@ const ProfilePage: React.FC = () => {
                   <p className="text-white font-medium">{user?.email}</p>
                 </div>
                 
-                <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                <div className={`bg-gray-800 rounded-lg p-4 border ${profile.phone ? 'border-gray-700' : 'border-yellow-500/50'}`}>
                   <p className="text-sm text-gray-400 mb-1">Phone</p>
-                  <p className="text-white font-medium">{profile.phone || 'Not provided'}</p>
+                  <p className={`font-medium ${profile.phone ? 'text-white' : 'text-yellow-400'}`}>
+                    {profile.phone || '⚠️ Required for bookings'}
+                  </p>
                 </div>
                 
                 <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
@@ -220,6 +252,7 @@ const ProfilePage: React.FC = () => {
                     value={formData.first_name}
                     onChange={handleInputChange}
                     placeholder="John"
+                    required
                     fullWidth
                   />
                   <Input
@@ -229,6 +262,7 @@ const ProfilePage: React.FC = () => {
                     value={formData.last_name}
                     onChange={handleInputChange}
                     placeholder="Doe"
+                    required
                     fullWidth
                   />
                 </div>
@@ -254,12 +288,14 @@ const ProfilePage: React.FC = () => {
                     />
                   </div>
                   <Input
-                    label="Phone Number"
+                    label="Phone Number *"
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    placeholder="+1 (234) 567-890"
+                    placeholder="1234567890"
+                    helperText="Required - 10 digits only"
+                    required
                     icon={
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -337,7 +373,7 @@ const ProfilePage: React.FC = () => {
                 <Button
                   type="submit"
                   variant="primary"
-                  size="lg"
+                  size={"lg" as const}
                   isLoading={saving}
                   fullWidth
                 >
