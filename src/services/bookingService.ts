@@ -186,6 +186,28 @@ export const bookingService = {
     }
   },
 
+  async cancelBooking(bookingId: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Delete the booking (only if user is the renter)
+      const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId)
+        .eq('renter_id', user.id);
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error: any) {
+      console.error('Error cancelling booking:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+
   // Update booking status (owner only)
   async updateBookingStatus(
     bookingId: string,
@@ -210,3 +232,4 @@ export const bookingService = {
     }
   }
 };
+
