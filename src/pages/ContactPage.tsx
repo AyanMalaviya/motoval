@@ -251,7 +251,7 @@ const ContactPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gray-800 border border-gray-700 rounded-2xl overflow-hidden h-96">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3950.2613268344435!2d72.66433417552483!3d23.15409971140667!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x395e817560c0f569%3A0xb880e0b89c71176b!2sF%20-%20Block%20PDPU!5e1!3m2!1sen!2sin!4v1762078007338!5m2!1sen!2sin"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d614455.2501693568!2d-46.92562474476691!3d-23.6814332226717!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce448183a461d1%3A0x9ba94b08ff335bae!2sS%C3%A3o%20Paulo%2C%20State%20of%20S%C3%A3o%20Paulo%2C%20Brazil!5e1!3m2!1sen!2sin!4v1765135695933!5m2!1sen!2sin"
               width="100%"
               height="100%"
               style={{ border: 0 }}

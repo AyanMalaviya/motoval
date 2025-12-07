@@ -137,54 +137,77 @@ export const bookingService = {
     }
   },
 
-  // Get user's bookings (as renter)
-  async getUserBookings(userId?: string): Promise<Booking[]> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const targetUserId = userId || user?.id;
-      if (!targetUserId) return [];
+// Get user's bookings (as renter)
+async getUserBookings(userId?: string): Promise<Booking[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const targetUserId = userId || user?.id;
+    if (!targetUserId) return [];
 
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          car:user_cars(*)
-        `)
-        .eq('renter_id', targetUserId)
-        .order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        car:user_cars(*)
+      `)
+      .eq('renter_id', targetUserId)
+      .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
+    if (error) {
       console.error('Error fetching user bookings:', error);
-      return [];
+      throw error;
     }
-  },
 
-  // Get bookings for user's cars (as owner)
-  async getOwnerBookings(userId?: string): Promise<Booking[]> {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const targetUserId = userId || user?.id;
-      if (!targetUserId) return [];
+    console.log('User bookings data:', data); // DEBUG LOG
 
-      const { data, error } = await supabase
-        .from('bookings')
-        .select(`
-          *,
-          car:user_cars(*),
-          renter:users!renter_id(id, first_name, last_name, phone, email, driver_license_number, driver_license_expiry)
-        `)
-        .eq('owner_id', targetUserId)
-        .order('created_at', { ascending: false });
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching user bookings:', error);
+    return [];
+  }
+},
 
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
-      console.error('Error fetching owner bookings:', error);
-      return [];
+// Get bookings for user's cars (as owner)
+async getOwnerBookings(userId?: string): Promise<Booking[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    const targetUserId = userId || user?.id;
+    if (!targetUserId) return [];
+
+    const { data, error } = await supabase
+      .from('bookings')
+      .select(`
+        *,
+        car:user_cars(*)
+      `)
+      .eq('owner_id', targetUserId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Manually fetch renter data from your users table
+    if (data && data.length > 0) {
+      const renterIds = [...new Set(data.map(b => b.renter_id))];
+      const { data: renters } = await supabase
+        .from('users')
+        .select('id, first_name, last_name, email, phone, driver_license_number, driver_license_expiry')
+        .in('id', renterIds);
+      
+      const rentersMap = new Map(renters?.map(r => [r.id, r]) || []);
+      
+      return data.map(booking => ({
+        ...booking,
+        renter: rentersMap.get(booking.renter_id)
+      }));
     }
-  },
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching owner bookings:', error);
+    return [];
+  }
+},
+
 
   async cancelBooking(bookingId: string): Promise<{ success: boolean; error?: string }> {
     try {

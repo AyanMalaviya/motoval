@@ -100,13 +100,22 @@ const ProfilePage: React.FC = () => {
     setSaving(true);
 
     try {
+      // Clean the data - convert empty strings to null for date fields
+      const cleanedData = {
+        id: user.id,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone: formData.phone,
+        bio: formData.bio,
+        date_of_birth: formData.date_of_birth?.trim() || null,
+        driver_license_number: formData.driver_license_number,
+        driver_license_expiry: formData.driver_license_expiry?.trim() || null,
+        updated_at: new Date().toISOString()
+      };
+
       const { error } = await supabase
         .from('users')
-        .upsert({
-          id: user.id,
-          ...formData,
-          updated_at: new Date().toISOString()
-        });
+        .upsert(cleanedData);
 
       if (error) throw error;
 

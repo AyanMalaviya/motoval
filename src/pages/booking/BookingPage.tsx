@@ -9,54 +9,33 @@ const BookingsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'renter' | 'owner'>('renter');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-      const fetchBookings = async () => {
-        if (!user) return;
-        
-        try {
-          setLoading(true);
-          const [userBookingsData, ownerBookingsData] = await Promise.all([
-            bookingService.getUserBookings(),
-            bookingService.getOwnerBookings(),
-          ]);
-          
-          setUserBookings(userBookingsData);
-          setOwnerBookings(ownerBookingsData);
-          
-          // ADD THIS CONSOLE LOG
-          console.log('Owner bookings:', ownerBookingsData);
-          console.log('Current user ID:', user?.id);
-        } catch (error) {
-          console.error('Error fetching bookings:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      fetchBookings();
-    }, [user]);
-
-    const fetchBookings = async () => {
-      if (!user) return;
+useEffect(() => {
+  const fetchBookings = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      const [userBookingsData, ownerBookingsData] = await Promise.all([
+        bookingService.getUserBookings(),
+        bookingService.getOwnerBookings(),
+      ]);
       
-      try {
-        setLoading(true);
-        const [userBookingsData, ownerBookingsData] = await Promise.all([
-          bookingService.getUserBookings(),
-          bookingService.getOwnerBookings(),
-        ]);
-        
-        setUserBookings(userBookingsData);
-        setOwnerBookings(ownerBookingsData);
-      } catch (error) {
-        console.error('Error fetching bookings:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      setUserBookings(userBookingsData);
+      setOwnerBookings(ownerBookingsData);
+      
+      // ADD THESE CONSOLE LOGS FOR DEBUGGING
+      console.log('Owner bookings:', ownerBookingsData);
+      console.log('Current user ID:', user?.id);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchBookings();
-  }, [user]);
+  fetchBookings();
+}, [user]);
+
 
   const handleStatusUpdate = async (bookingId: string, status: Booking['status']) => {
     const result = await bookingService.updateBookingStatus(bookingId, status);
@@ -218,7 +197,7 @@ const BookingsPage: React.FC = () => {
                         {booking.car?.make} {booking.car?.model} ({booking.car?.year})
                       </h3>
                       <p className="text-gray-600">
-                        Requested by: {booking.renter?.firstname} {booking.renter?.lastname}
+                        Requested by: {booking.renter?.first_name} {booking.renter?.last_name}
                       </p>
                       {/* RENTER CONTACT DETAILS */}
                       <p className="text-sm text-gray-600 mt-2">
@@ -262,11 +241,11 @@ const BookingsPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* WHATSAPP CONTACT BUTTON */}
+                  {/* WHATSAPP CONTACT BUTTON - Should be right after the renter's message */}
                   {booking.renter?.phone && (
                     <div className="mb-4">
                       <a
-                        href={`https://wa.me/${booking.renter.phone.replace(/\D/g, '')}?text=Hi ${booking.renter.firstname}, regarding your booking request for ${booking.car?.make} ${booking.car?.model} from ${new Date(booking.start_date).toLocaleDateString()} to ${new Date(booking.end_date).toLocaleDateString()}`}
+                        href={`https://wa.me/${booking.renter.phone.replace(/\D/g, '')}?text=Hi ${booking.renter.firstname || booking.renter.first_name}, regarding your booking request for ${booking.car?.make} ${booking.car?.model} from ${new Date(booking.start_date).toLocaleDateString()} to ${new Date(booking.end_date).toLocaleDateString()}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium transition-colors"
@@ -278,6 +257,7 @@ const BookingsPage: React.FC = () => {
                       </a>
                     </div>
                   )}
+
 
                   {/* APPROVE/REJECT BUTTONS */}
                   {booking.status === 'pending' && (
